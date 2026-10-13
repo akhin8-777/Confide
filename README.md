@@ -2,7 +2,7 @@
 
 A free NDA generator for B2B and IT consulting agreements. Choose a one-way, mutual or employee NDA, fill in the details, preview the document live, and download an editable Word file.
 
-**Live demo:** [paste your Vercel link]
+**Live demo:** (https://confide-nda.vercel.app/)]
 
 ## Features
 - One-way, mutual, and employee NDAs
