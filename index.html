@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#08140E" />
+<title>Confide — Premium NDA Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Poiret+One&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#08140E; --panel:#0D1F16; --panel-2:#112A1E;
+    --brass:#B89B5E; --brass-soft:#D8C690; --brass-dim:rgba(184,155,94,.16);
+    --matte:#E6E3D8;        /* matte off-white — for headings & titles */
+    --confide:#A7C2A3;      /* soft sage-ivory — distinct, blends with forest green, for the Confide wordmark */
+    --white:#F6F3EC; --cream-dim:#CFC9BA; --mute:#8AA394; --line:rgba(184,155,94,.22);
+    --desk:#E7E4DC; --paper:#FDFBFA; --ink:#1A1A1A; --ink-soft:#8a6a28;
+    --red:#7E1F1A;
+    box-sizing:border-box;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  html{-webkit-text-size-adjust:100%;}
+  body{background:var(--bg);color:var(--white);font-family:"Jost",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;}
+
+  .view{position:fixed;inset:0;opacity:0;visibility:hidden;transition:opacity .6s ease, visibility .6s;}
+  .view.active{opacity:1;visibility:visible;}
+
+  /* ---------- LANDING ---------- */
+  #landing{display:flex;align-items:center;justify-content:center;background:
+     radial-gradient(1200px 700px at 50% 38%, #10281B 0%, #08140E 62%);
+     padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0);}
+  .land-inner{text-align:center;padding:0 28px;}
+  .land-mark{width:88px;height:88px;margin:0 auto 32px;opacity:0;animation:markIn 1.1s ease .2s forwards;}
+  .land-mark .col{opacity:0;transform-origin:50% 50%;transform:translateY(8px) scale(.96);animation:colIn 1.1s cubic-bezier(.2,1,.3,1) .5s forwards;}
+  @keyframes colIn{to{opacity:1;transform:none;}}
+  @keyframes markIn{to{opacity:1;}}
+  .wordmark{font-family:"Poiret One",cursive;font-weight:400;font-size:clamp(62px,14vw,150px);letter-spacing:.28em;line-height:1;margin:0;color:var(--confide);padding-left:.28em;}
+  .wordmark .ch{display:inline-block;opacity:0;transform:translateY(38px);animation:charIn .9s cubic-bezier(.19,1,.22,1) forwards;}
+  @keyframes charIn{to{opacity:1;transform:none;}}
+  .land-sub{font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:300;font-size:clamp(15px,2vw,19px);color:var(--cream-dim);letter-spacing:.08em;margin:24px 0 0;opacity:0;animation:fadeUp 1s ease 2.6s forwards;}
+  .rule{width:0;height:1px;background:linear-gradient(90deg,transparent,rgba(246,243,236,.5),transparent);margin:30px auto 0;opacity:.6;animation:ruleGrow 1.1s ease 2.7s forwards;}
+  @keyframes ruleGrow{to{width:180px;}}
+  .start{margin-top:46px;opacity:0;animation:fadeUp 1s ease 2.9s forwards;}
+  .start-btn{position:relative;font-family:"Jost",sans-serif;font-weight:400;font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--white);background:transparent;border:1px solid rgba(246,243,236,.35);border-radius:1px;padding:16px 48px;cursor:pointer;overflow:hidden;transition:.25s ease;}
+  .start-btn:hover{color:var(--bg);background:var(--white);border-color:var(--white);transform:translateY(-2px);}
+  .land-foot{position:absolute;bottom:26px;left:0;right:0;text-align:center;font-size:11px;letter-spacing:.2em;color:var(--mute);opacity:0;animation:fadeUp 1s ease 3.1s forwards;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+
+  /* ---------- TYPE CHOOSER ---------- */
+  #type{display:flex;flex-direction:column;background:radial-gradient(1000px 600px at 50% 0%, #10281B 0%, #08140E 60%);overflow-y:auto;}
+  .type-head{text-align:center;padding:72px 28px 10px;}
+  .type-head .k{font-size:10px;letter-spacing:.36em;color:var(--mute);margin-bottom:18px;}
+  .type-head h2{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:clamp(36px,5.6vw,60px);margin:0;letter-spacing:.04em;color:var(--matte);}
+  .type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;max-width:980px;margin:48px auto;padding:0 28px;width:100%;}
+  .tcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:34px 28px;cursor:pointer;text-align:left;transition:transform .22s ease,border-color .22s,background .22s;position:relative;overflow:hidden;}
+  .tcard:hover{transform:translateY(-6px);border-color:var(--brass);background:var(--panel-2);}
+  .tcard .num{font-family:"Cormorant Garamond",serif;font-size:17px;color:var(--mute);letter-spacing:.1em;}
+  .tcard .ic{width:40px;height:40px;margin:16px 0 22px;color:var(--cream-dim);}
+  .tcard h3{font-family:"Cormorant Garamond",serif;font-weight:400;font-size:27px;margin:0 0 12px;letter-spacing:.02em;color:var(--matte);}
+  .tcard p{font-size:13.5px;line-height:1.65;color:var(--mute);margin:0;font-weight:300;}
+  .tcard .go{margin-top:24px;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--cream-dim);display:flex;align-items:center;gap:8px;}
+  .tcard .go svg{transition:transform .2s;}
+  .tcard:hover .go svg{transform:translateX(5px);}
+  .back-link{display:inline-flex;align-items:center;gap:8px;color:var(--mute);font-size:12px;letter-spacing:.15em;text-transform:uppercase;background:none;border:none;cursor:pointer;margin:10px auto 40px;transition:color .2s;}
+  .back-link:hover{color:var(--brass);}
+
+  /* ---------- BUILDER ---------- */
+  #builder{display:flex;}
+  .left{width:430px;flex:none;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0);}
+  .l-top{padding:22px 32px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);}
+  .l-brand{font-family:"Poiret One",cursive;font-size:24px;letter-spacing:.22em;font-weight:400;color:var(--confide);}
+  .l-brand b{color:var(--confide);font-weight:400;}
+  .l-type{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);}
+  .steps{display:flex;gap:6px;padding:20px 32px 0;}
+  .steps .s{flex:1;height:3px;background:var(--brass-dim);border-radius:3px;transition:background .3s;}
+  .steps .s.on{background:var(--brass);}
+  .s-meta{padding:16px 32px 6px;}
+  .s-meta .k{font-size:10px;letter-spacing:.26em;color:var(--mute);}
+  .s-meta .t{font-family:"Cormorant Garamond",serif;font-weight:400;font-size:26px;margin-top:5px;letter-spacing:.03em;color:var(--matte);}
+  .scroll{flex:1;overflow-y:auto;padding:6px 32px 26px;}
+  .scroll::-webkit-scrollbar{width:8px;}
+  .scroll::-webkit-scrollbar-thumb{background:var(--brass-dim);border-radius:8px;}
+  .wiz{display:none;animation:stepIn .3s ease;}
+  .wiz.show{display:block;}
+  @keyframes stepIn{from{opacity:0;transform:translateX(10px);}to{opacity:1;transform:none;}}
+  .field{margin-bottom:17px;}
+  .field label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass-soft);margin-bottom:7px;font-weight:500;}
+  .field label .opt{text-transform:none;letter-spacing:0;color:var(--mute);font-weight:300;}
+  .field input,.field textarea,.field select{width:100%;font-family:"Jost",sans-serif;font-size:15px;color:var(--white);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:12px 13px;transition:.15s;}
+  .field input::placeholder,.field textarea::placeholder{color:#577065;}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--brass);box-shadow:0 0 0 3px var(--brass-dim);}
+  .field textarea{resize:vertical;min-height:64px;line-height:1.55;}
+  .field .hint{font-size:11px;color:var(--mute);margin-top:6px;font-weight:300;line-height:1.5;}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
+  .chip{font-size:11.5px;letter-spacing:.02em;color:var(--brass-soft);background:var(--brass-dim);border:1px solid var(--line);border-radius:20px;padding:6px 12px;cursor:pointer;transition:.15s;font-weight:300;}
+  .chip:hover{border-color:var(--brass);color:var(--white);}
+  .chip.added{background:var(--brass);color:var(--bg);border-color:var(--brass);}
+  .toggle{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border:1px solid var(--line);border-radius:6px;margin-bottom:11px;background:var(--bg);}
+  .toggle .lab{font-size:13.5px;}
+  .toggle .lab small{display:block;color:var(--mute);font-size:11px;margin-top:3px;font-weight:300;}
+  .sw{width:44px;height:24px;border-radius:24px;background:var(--brass-dim);position:relative;cursor:pointer;flex:none;transition:.18s;border:1px solid var(--line);}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--mute);transition:.18s;}
+  .sw[aria-pressed="true"]{background:var(--brass);}
+  .sw[aria-pressed="true"]::after{left:22px;background:var(--bg);}
+  .nav{flex:none;display:flex;gap:12px;padding:18px 32px;border-top:1px solid var(--line);background:var(--panel);padding-bottom:calc(18px + env(safe-area-inset-bottom,0));}
+  .btn{font-family:"Jost",sans-serif;font-weight:500;font-size:12px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;border-radius:3px;padding:14px 18px;border:1px solid transparent;transition:.16s;}
+  .btn-ghost{background:transparent;color:var(--brass-soft);border-color:var(--line);}
+  .btn-ghost:hover{border-color:var(--brass);color:var(--white);}
+  .btn-primary{background:var(--brass);color:var(--bg);flex:1;}
+  .btn-primary:hover{background:var(--brass-soft);}
+  .right{flex:1;background:var(--desk);overflow-y:auto;padding:40px;display:flex;justify-content:center;}
+  .desk-inner{width:100%;max-width:820px;}
+  .deskbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
+  .deskbar .lbl{font-size:10px;letter-spacing:.24em;color:#6b6b6b;}
+  .deskbar .dl{font-family:"Jost",sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:500;background:var(--bg);color:var(--brass);border:none;border-radius:4px;padding:11px 20px;cursor:pointer;transition:.16s;}
+  .deskbar .dl:hover{background:var(--panel);}
+  .paper{background:var(--paper);color:var(--ink);font-family:"Cormorant Garamond",Georgia,serif;width:100%;border-radius:2px;position:relative;box-shadow:0 24px 60px -24px rgba(0,0,0,.45);padding:76px 72px 88px;}
+  .paper .title{font-size:26px;font-weight:600;text-align:center;letter-spacing:.02em;margin:0 0 6px;}
+  .paper .subtitle{text-align:center;font-size:14px;font-style:italic;color:#5a5a5a;margin:0 0 30px;}
+  .paper p{font-size:15.5px;line-height:1.72;margin:0 0 13px;text-align:justify;}
+  .paper h2{font-size:14.5px;font-weight:600;letter-spacing:.04em;margin:22px 0 7px;text-transform:uppercase;}
+  .paper .sub{font-weight:600;}
+  .paper ul{margin:0 0 13px;padding-left:22px;}
+  .paper li{font-size:15.5px;line-height:1.68;margin-bottom:6px;text-align:justify;}
+  .fillx{color:var(--ink-soft);background:rgba(184,155,94,.20);padding:0 4px;border-radius:2px;font-style:italic;}
+  .sigwrap{display:flex;justify-content:space-between;gap:48px;margin-top:46px;}
+  .sigcol{flex:1;}
+  .sigcol .sig-for{font-weight:600;font-size:14px;color:#2a2a2a;margin-bottom:16px;letter-spacing:.02em;}
+  .sigcol .sig-row{display:flex;align-items:flex-end;gap:10px;margin-bottom:16px;}
+  .sigcol .sig-k{font-family:"Jost",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#777;width:62px;flex:none;padding-bottom:3px;}
+  .sigcol .sig-line{flex:1;border-bottom:1px solid #b9b9b9;height:22px;}
+  .foot-note{margin-top:36px;padding-top:14px;border-top:1px solid #e3ded5;font-size:11px;line-height:1.5;color:#8a8a8a;font-family:"Jost",sans-serif;letter-spacing:.02em;text-align:center;font-weight:300;}
+  .seal{position:absolute;right:66px;bottom:116px;width:112px;height:112px;opacity:0;transform:scale(.4) rotate(-18deg);pointer-events:none;}
+  .seal.show{animation:stamp .55s cubic-bezier(.2,1.3,.4,1) forwards;}
+  @keyframes stamp{0%{opacity:0;transform:scale(1.8) rotate(-18deg);}60%{opacity:1;transform:scale(.92) rotate(-14deg);}100%{opacity:1;transform:scale(1) rotate(-12deg);}}
+  @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-delay:0s!important;}}
+  @media(max-width:860px){
+    body{overflow:auto;}
+    .view{position:static;opacity:1;visibility:visible;}
+    .view:not(.active){display:none!important;}
+    #builder{flex-direction:column;height:auto;}
+    .left{width:100%;height:auto;}
+    .scroll{max-height:none;overflow:visible;}
+    .nav{position:sticky;bottom:0;}
+    .type-grid{grid-template-columns:1fr;}
+    .right{padding:24px 14px;}
+    .paper{padding:46px 28px 60px;}
+    .seal{right:22px;bottom:70px;width:84px;height:84px;}
+  }
+  /* --- phone-specific refinements --- */
+  @media(max-width:560px){
+    #landing.active{display:flex;}
+    #landing{min-height:100vh;min-height:100dvh;flex-direction:column;justify-content:center;}
+    #type.active{display:flex;}
+    .wordmark{white-space:nowrap;letter-spacing:.14em;padding-left:.14em;font-size:clamp(46px,16vw,88px);}
+    .land-mark{width:66px;height:66px;margin-bottom:22px;}
+    .land-sub{font-size:15px;padding:0 10px;}
+    .land-foot{position:static;margin:34px auto 20px;padding:0 24px;max-width:340px;line-height:1.5;}
+    .land-inner{padding:40px 24px;}
+    .type-head{padding:52px 24px 6px;}
+    .type-grid{margin:30px auto;gap:16px;}
+    .start{margin-top:36px;}
+    #builder{justify-content:flex-start;align-items:stretch;}
+    #type{justify-content:flex-start;}
+  }
+.finmsg,.warn{display:none;font-size:12px;line-height:1.55;border-radius:6px;padding:11px 13px;margin-top:12px;font-weight:300}
+.finmsg{border:1px solid #B5573B;color:#E8B4A4;background:rgba(181,87,59,.12)}
+.warn{border:1px solid var(--line);color:var(--brass-soft);background:var(--brass-dim)}
+.finmsg.on,.warn.on{display:block}
+.deskbar .dl:disabled{opacity:.4;cursor:not-allowed}
+.sw:focus-visible,.chip:focus-visible,.btn:focus-visible,.tcard:focus-visible,.start-btn:focus-visible,.dl:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.start{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+#landing.skip *{animation-duration:.01ms!important;animation-delay:0s!important}
+.mtab{display:none}
+@media(max-width:860px){.mtab{display:flex;position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}.mtab button{flex:1;padding:13px;background:none;border:none;color:var(--mute);font-family:Jost,sans-serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer}.mtab button.on{color:var(--brass);box-shadow:inset 0 -2px 0 var(--brass)}#builder.m-edit .right{display:none}#builder.m-prev .left{display:none}}
+/* ---- v1.2: responsive pass (phone, tablet, desktop) ---- */
+html,body{max-width:100%}
+.field input[type=date]{color-scheme:dark;min-height:46px}
+.paper{overflow-wrap:break-word}
+.deskbar{flex-wrap:wrap;gap:10px}
+@media(min-width:861px) and (max-width:1100px){.left{width:370px}.l-top,.steps,.s-meta,.scroll,.nav{padding-left:24px;padding-right:24px}.right{padding:24px}.paper{padding:56px 40px 70px}.sigwrap{gap:28px}}
+@media(max-width:860px){body{overflow-x:hidden}.type-grid{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}.field input,.field textarea,.field select{font-size:16px}.mtab{padding-top:env(safe-area-inset-top,0px)}.type-head{padding-top:calc(52px + env(safe-area-inset-top,0px))}.right{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:560px){.type-grid{grid-template-columns:1fr}.paper p,.paper li{text-align:left}.sigwrap{flex-direction:column;gap:26px}.l-top,.steps,.s-meta,.scroll,.nav{padding-left:20px;padding-right:20px}.two{grid-template-columns:1fr}.deskbar .dl{width:100%}.paper{padding:38px 22px 56px}}
+@media(pointer:coarse){.sw{width:54px;height:30px}.sw::after{width:24px;height:24px}.sw[aria-pressed="true"]::after{left:28px}.chip{padding:10px 14px}.btn,.back-link,.start-btn{min-height:46px}}
+@media(max-height:560px) and (orientation:landscape){#landing{overflow-y:auto;align-items:flex-start}.land-inner{padding:20px 28px}.land-mark{display:none}.wordmark{font-size:clamp(40px,12vh,72px)}.land-sub{margin-top:12px}.rule{margin-top:14px}.start{margin-top:18px}.land-foot{position:static;margin:14px auto}}
+</style>
+</head>
+<body>
+
+<section class="view active" id="landing">
+  <div class="land-inner">
+    <svg class="land-mark" viewBox="0 0 80 80" fill="none" aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+      <!-- classical column, standalone -->
+      <g class="col" stroke="#F6F3EC" fill="none" stroke-width="2">
+        <path d="M28 22 h24" stroke-width="3.4"/>
+        <path d="M24 28 h11"/>
+        <path d="M45 28 h11"/>
+        <path d="M25 33 h30"/>
+        <path d="M33 37 V57"/>
+        <path d="M40 37 V60"/>
+        <path d="M47 37 V57"/>
+        <path d="M28 61 h24" stroke-width="2.8"/>
+      </g>
+    </svg>
+    <h1 class="wordmark" id="wordmark" aria-label="Confide"></h1>
+    <p class="land-sub">Draft a considered non-disclosure agreement in minutes.</p>
+    <div class="rule"></div>
+    <div class="start"><button class="start-btn" id="getStarted">Get Started</button><button class="start-btn" id="resumeBtn" style="display:none">Resume draft</button></div>
+  </div>
+  <div class="land-foot">Not legal advice — please have your agreement reviewed by a qualified lawyer.<br>Your entries stay in your browser.</div>
+</section>
+
+<section class="view" id="type">
+  <div class="type-head">
+    <div class="k">CHOOSE YOUR AGREEMENT</div>
+    <h2>Which agreement do you need?</h2>
+  </div>
+  <div class="type-grid">
+    <button class="tcard" data-type="oneway">
+      <div class="num">I</div>
+      <svg class="ic" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 24h26M28 16l8 8-8 8"/><rect x="6" y="10" width="8" height="28" rx="2"/></svg>
+      <h3>One-Way NDA</h3>
+      <p>A single party discloses confidential information to a recipient — for vendor, contractor, or investor evaluations.</p>
+      <div class="go">Select <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 6h13M10 1l5 5-5 5"/></svg></div>
+    </button>
+    <button class="tcard" data-type="mutual">
+      <div class="num">II</div>
+      <svg class="ic" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 18h26M28 11l8 7-8 7M40 30H14M20 37l-8-7 8-7"/></svg>
+      <h3>Mutual NDA</h3>
+      <p>Both parties disclose, for a strategic collaboration. Protects Background IP, methods, and engineering specifications.</p>
+      <div class="go">Select <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 6h13M10 1l5 5-5 5"/></svg></div>
+    </button>
+    <button class="tcard" data-type="employee">
+      <div class="num">III</div>
+      <svg class="ic" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="24" cy="16" r="7"/><path d="M11 39c0-7 6-12 13-12s13 5 13 12"/></svg>
+      <h3>Employee NDA</h3>
+      <p>Employer and employee. Covers Work Made for Hire, Assignment of Inventions, and a Moral Rights waiver.</p>
+      <div class="go">Select <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 6h13M10 1l5 5-5 5"/></svg></div>
+    </button>
+  </div>
+  <button class="back-link" id="backToLanding"><svg width="14" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6H2M6 1L1 6l5 5"/></svg> Back</button>
+</section>
+
+<section class="view" id="builder">
+  <div class="mtab"><button class="on" data-m="edit">Edit</button><button data-m="prev">Preview</button></div>
+  <aside class="left">
+    <div class="l-top"><span class="l-brand">Con<b>fide</b></span><span class="l-type" id="lType">Mutual NDA</span></div>
+    <div class="steps" id="steps"><div class="s on"></div><div class="s"></div><div class="s"></div></div>
+    <div class="s-meta"><div class="k" id="sk">STEP 2 OF 4</div><div class="t" id="st">The parties</div></div>
+    <div class="scroll">
+      <div class="wiz show" data-w="1">
+        <div class="field"><label id="lblA">Party A</label><input id="partyA" placeholder="e.g. Orion Systems Ltd" /></div>
+        <div class="field" id="fA_country"><label id="lblAcountry">Party A — country of incorporation</label><input id="partyAcountry" placeholder="e.g. the United Kingdom" /></div>
+        <div class="field"><label id="lblAaddr">Party A — principal office address</label><input id="partyAaddr" placeholder="Registered office address" /></div>
+        <div class="field"><label id="lblB">Party B</label><input id="partyB" placeholder="e.g. Nimbus Technologies Pvt Ltd" /></div>
+        <div class="field" id="fB_country"><label id="lblBcountry">Party B — country of incorporation</label><input id="partyBcountry" placeholder="e.g. Singapore" /></div>
+        <div class="field"><label id="lblBaddr">Party B — principal office address</label><input id="partyBaddr" placeholder="Registered office address" /></div>
+        <div class="field"><label>Effective date</label><input id="edate" type="date" /></div>
+      </div>
+      <div class="wiz" data-w="2">
+        <div class="field"><label>Purpose of disclosure</label><textarea id="purpose" placeholder="e.g. Evaluating a potential software integration partnership"></textarea></div>
+        <div class="field">
+          <label>Additional confidential information <span class="opt">(optional)</span></label>
+          <textarea id="confInfo" placeholder="The agreement already covers standard categories. Add anything specific to you — e.g. the pricing-engine source code, a named client database, particular model weights…"></textarea>
+          <div class="hint">The document already lists the standard categories. Type to add your own, or tap a suggestion:</div>
+          <div class="chips" id="chips">
+            <span class="chip" data-v="source code">Source code</span>
+            <span class="chip" data-v="AI models and weights">AI models &amp; weights</span>
+            <span class="chip" data-v="data schemas">Data schemas</span>
+            <span class="chip" data-v="API and encryption keys">API &amp; encryption keys</span>
+            <span class="chip" data-v="technical architecture">Technical architecture</span>
+            <span class="chip" data-v="customer and pricing data">Customer &amp; pricing data</span>
+            <span class="chip" data-v="financial information">Financials</span>
+            <span class="chip" data-v="product roadmap">Roadmap</span>
+          </div>
+        </div>
+        <div class="field"><label>Governing jurisdiction</label><input id="jurisdiction" placeholder="e.g. India / State of Delaware / England &amp; Wales" /></div>
+        <div class="field"><label>Courts with jurisdiction <span class="opt">(city)</span></label><input id="courts" placeholder="e.g. Bengaluru" /><div class="hint">Courts that hear disputes, and grant interim relief if arbitration is on.</div></div>
+        <div class="two"><div class="field"><label>Agreement term</label><select id="term"><option value="1">1 year</option><option value="2" selected>2 years</option><option value="3">3 years</option><option value="5">5 years</option></select></div><div class="field"><label>Confidentiality survives</label><select id="survival"><option value="2">2 years</option><option value="3" selected>3 years</option><option value="5">5 years</option></select></div></div>
+      </div>
+      <div class="wiz" data-w="3">
+        <div class="toggle"><div class="lab">Non-Solicitation<small>12-month restriction on soliciting staff &amp; clients</small></div><div class="sw" id="swNS" aria-pressed="true" role="switch"></div></div>
+        <div class="toggle"><div class="lab">Arbitration clause<small>Resolve disputes by arbitration</small></div><div class="sw" id="swAR" aria-pressed="false" role="switch"></div></div>
+        <div class="field" id="fArbSeat" style="display:none;margin-top:-4px;margin-bottom:16px;"><label>Seat / place of arbitration</label><input id="arbSeat" placeholder="e.g. London, Singapore (SIAC), New Delhi…" /><div class="hint">Where the arbitration is legally seated — this can differ from the governing law.</div>
+          <div class="two" style="margin-top:12px"><div><label>Arbitrators</label><select id="arbitrators"><option value="1" selected>One</option><option value="3">Three</option></select></div><div><label>Rules</label><select id="arbRules"><option>Ad hoc</option><option>MCIA</option><option>DIAC</option><option>SIAC</option><option>ICC</option><option>LCIA</option></select></div></div></div>
+        <div class="toggle"><div class="lab">Secure deletion<small>Erase code &amp; data on return or request (backups and legal holds excepted)</small></div><div class="sw" id="swSA" aria-pressed="true" role="switch"></div></div>
+        <div class="finmsg" id="finMsg" role="alert"></div><div class="warn" id="warnBox" aria-live="polite"></div>
+        <p style="font-size:12px;color:var(--mute);line-height:1.6;margin-top:16px;font-weight:300;">Review the document on the right, then finalise to download it as an editable Word file. This is not legal advice — please have it reviewed by a qualified lawyer.</p>
+      </div>
+    </div>
+    <div class="nav"><button class="btn btn-ghost" id="backBtn">Back</button><button class="btn btn-primary" id="nextBtn">Next</button></div>
+  </aside>
+  <main class="right">
+    <div class="desk-inner">
+      <div class="deskbar"><span class="lbl">LIVE DOCUMENT</span><button class="dl" id="downloadBtn">Download Word</button></div>
+      <article class="paper" id="paper"></article>
+    </div>
+  </main>
+</section>
+
+<script>
+(function(){const word="Confide",el=document.getElementById("wordmark");[...word].forEach((c,i)=>{const s=document.createElement("span");s.className="ch";s.textContent=c;s.style.animationDelay=(1.5+i*0.1)+"s";el.appendChild(s);});})();
+
+function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));if(id!=="landing")window.scrollTo(0,0);}
+document.getElementById("getStarted").addEventListener("click",()=>show("type"));
+document.getElementById("backToLanding").addEventListener("click",()=>show("landing"));
+
+const TODAY=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const S={type:"mutual",partyA:"",partyAcountry:"",partyAaddr:"",partyB:"",partyBcountry:"",partyBaddr:"",edate:TODAY,purpose:"",confInfo:"",jurisdiction:"",courts:"",term:"2",survival:"3",arbitrators:"1",arbRules:"Ad hoc",arbSeat:"",nonSolicit:true,arb:false,sanitize:true,step:1,sealed:false};
+const $=id=>document.getElementById(id);
+const esc=s=>(s||"").replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const F=(v,ph)=>v?esc(v):`<span class="fillx">[${ph}]</span>`;
+const LABELS={
+  oneway:{a:"Disclosing Party",b:"Receiving Party",name:"One-Way NDA",title:"NON-DISCLOSURE AGREEMENT",sub:"One-Way Confidentiality Agreement"},
+  mutual:{a:"First Party",b:"Second Party",name:"Mutual NDA",title:"MUTUAL NON-DISCLOSURE AGREEMENT",sub:"Two-Way Confidentiality & IP Protection Agreement"},
+  employee:{a:"Company",b:"Employee",name:"Employee NDA",title:"EMPLOYEE NON-DISCLOSURE AGREEMENT",sub:"Confidentiality, Invention Assignment & Non-Solicitation"}
+};
+const STEP_T={1:"The parties",2:"Scope & confidential information",3:"Covenants & finalise"};
+
+document.querySelectorAll(".tcard").forEach(card=>{
+  card.addEventListener("click",()=>{
+    S.type=card.dataset.type;const L=LABELS[S.type];
+    $("lType").textContent=L.name;$("lblA").textContent=L.a;$("lblB").textContent=L.b;
+    if(S.type==="employee"){
+      $("lblAcountry").textContent=L.a+" — state / country of incorporation";
+      $("lblAaddr").textContent=L.a+" — principal office address";
+      $("fB_country").style.display="none";                 // employee is an individual
+      $("lblBaddr").textContent=L.b+" — residential address";
+      $("partyBaddr").placeholder="Where the employee resides";
+    }else{
+      $("lblAcountry").textContent=L.a+" — country of incorporation";
+      $("lblAaddr").textContent=L.a+" — principal office address";
+      $("fB_country").style.display="";
+      $("lblBcountry").textContent=L.b+" — country of incorporation";
+      $("lblBaddr").textContent=L.b+" — principal office address";
+      $("partyBaddr").placeholder="Registered office address";
+    }
+    S.step=1;S.sealed=false;setStep(1);render();show("builder");
+  });
+});
+
+function setStep(n){
+  S.step=n;
+  document.querySelectorAll(".wiz").forEach(w=>w.classList.toggle("show",+w.dataset.w===n));
+  [...$("steps").children].forEach((s,i)=>s.classList.toggle("on",i<=n-1));
+  $("sk").textContent=`STEP ${n+1} OF 4`;$("st").textContent=STEP_T[n];
+  $("nextBtn").textContent=n===3?"Finalise & Seal":"Next";
+  const sc=document.querySelector(".scroll");if(sc)sc.scrollTop=0;
+}
+$("nextBtn").addEventListener("click",()=>{if(S.step<3)setStep(S.step+1);else finalise();});
+$("backBtn").addEventListener("click",()=>{if(S.step>1)setStep(S.step-1);else show("type");});
+
+[["partyA"],["partyAcountry"],["partyAaddr"],["partyB"],["partyBcountry"],["partyBaddr"],["purpose"],["confInfo"],["jurisdiction"],["arbSeat"],["edate"],["courts"],["term"],["survival"],["arbitrators"],["arbRules"]]
+.forEach(([id])=>$(id).addEventListener("input",e=>{S[id]=e.target.value;S.sealed=false;saveDraft();render();}));
+
+document.querySelectorAll(".chip").forEach(chip=>{
+  chip.addEventListener("click",()=>{
+    const v=chip.dataset.v,cur=S.confInfo.trim();const parts=cur?cur.split(/,\s*/):[];
+    if(parts.map(p=>p.toLowerCase()).includes(v.toLowerCase()))return;
+    parts.push(v);S.confInfo=parts.join(", ");$("confInfo").value=S.confInfo;chip.classList.add("added");S.sealed=false;saveDraft();render();
+  });
+});
+function bindSw(id,key){$(id).addEventListener("click",()=>{S[key]=!S[key];S.sealed=false;saveDraft();$(id).setAttribute("aria-pressed",S[key]);render();});}
+bindSw("swNS","nonSolicit");bindSw("swSA","sanitize");
+$("swAR").addEventListener("click",()=>{S.arb=!S.arb;S.sealed=false;saveDraft();$("swAR").setAttribute("aria-pressed",S.arb);$("fArbSeat").style.display=S.arb?"":"none";if(S.arb)setTimeout(()=>$("arbSeat").focus(),120);render();});
+
+function defs(){
+  const custom=S.confInfo
+    ?`<p>In addition to the categories above, the parties specifically intend to protect: <span class="sub">${F(S.confInfo,"the confidential information")}</span>.</p>`
+    :`<p>In addition to the categories above, the parties specifically intend to protect: <span class="fillx">[describe any further confidential information here]</span>.</p>`;
+  if(S.type==="employee"){
+    // Categories taken from the Employee NDA reference template.
+    return `<h2>Definition of Confidential Information</h2>
+    <p>"Confidential Information" means any and all proprietary, non-public information, technical data, trade secrets, and know-how, whether disclosed orally, in writing, electronically, graphically, or through observation, and whether or not labelled "Confidential," that is disclosed to, accessed by, or developed by the Employee during the term of employment. Without limiting the foregoing, it specifically includes:</p>
+    <ul>
+      <li><span class="sub">Technical Assets:</span> source code, object code, software libraries, algorithms, artificial-intelligence models and weights, data schemas, API keys, access tokens, SSH keys, encryption keys, network architecture, development documentation, and system specifications.</li>
+      <li><span class="sub">Client Data:</span> any data, business logic, user lists, personally identifiable information (PII), or technical infrastructure belonging to the Company's third-party clients ("Clients"), which the Employee is obligated to treat as confidential.</li>
+      <li><span class="sub">Business Operations:</span> customer lists, pricing strategies, financial information, marketing plans, vendor contracts, internal communications, and personnel files.</li>
+      <li><span class="sub">Derivatives:</span> any notes, reports, analyses, compilations, or studies created by the Employee that contain or reflect such Confidential Information.</li>
+    </ul>
+    ${custom}
+    <p>Confidential Information does not include information that: (i) is generally known to the public through no fault of the Employee; (ii) was in the Employee's possession prior to employment without restriction; or (iii) is rightfully received from a third party without a duty of confidentiality.</p>`;
+  }
+  return `<h2>Definition of Confidential Information</h2>
+  <p>"Confidential Information" means any non-public, proprietary information, technical data, trade secrets, or know-how disclosed in any form, whether or not marked "confidential," including without limitation:</p>
+  <ul>
+    <li><span class="sub">Technical assets:</span> source code, object code, software libraries, algorithms, artificial-intelligence models and weights, data schemas, API keys, access tokens, SSH keys, encryption keys, and technical architecture.</li>
+    <li><span class="sub">Business &amp; commercial:</span> customer lists, pricing structures, financial information, roadmaps, vendor contracts, and internal communications.</li>
+    <li><span class="sub">Derivatives:</span> any notes, analyses, or compilations that contain or reflect such Confidential Information.</li>
+  </ul>
+  ${custom}
+  <p>Confidential Information does not include information that: (i) is or becomes public through no fault of the receiving party; (ii) was lawfully held before disclosure without restriction; (iii) is rightfully received from a third party without a duty of confidentiality; or (iv) is independently developed without use of the disclosed information.</p>`;
+}
+function obligations(r){return `<h2>Obligations &amp; Security</h2><p>The ${r} shall hold all Confidential Information in strict confidence, use it solely for ${S.type==="employee"?"performing the Employee's duties for the Company":"the Purpose"}, and not disclose it to any third party without prior written consent. The ${r} shall further:</p><ul><li>maintain strict security over all passwords, access tokens, encryption keys, and devices;</li><li>not transfer source code or sensitive data to personal devices, personal cloud storage (e.g., personal Google Drive or Dropbox), or unsecured external drives; and</li><li>promptly report any suspected breach of security or loss of equipment.</li></ul>`;}
+const ipMutual=()=>`<h2>Intellectual Property</h2><p>This Agreement transfers no ownership of either party's intellectual property. Each party retains all right, title, and interest in its pre-existing and independently developed intellectual property ("Background IP"), including its proprietary platform, underlying architecture, source and object code, data models, algorithms, mathematical methods, and engineering specifications, all of which constitute its trade secrets. Ownership of any work newly created jointly by the parties ("Foreground IP") shall be governed by a separate definitive agreement.</p>`;
+const ipOneway=()=>`<h2>Intellectual Property</h2><p>This Agreement grants the Receiving Party no licence, title, or interest in the Disclosing Party's pre-existing intellectual property ("Background IP"), except a limited right to review it solely for the Purpose. Any newly created materials derived from the Confidential Information ("Foreground IP") shall belong to the Disclosing Party.</p>`;
+const ipEmployee=()=>`<h2>Intellectual Property &amp; Work Made for Hire</h2><p>(a) <span class="sub">Work Made for Hire.</span> All original works of authorship, software, scripts, designs, and documentation created by the Employee within the scope of employment are "works made for hire" and the sole property of the Company.</p><p>(b) <span class="sub">Assignment of Inventions.</span> To the extent any work does not qualify as a work made for hire, the Employee irrevocably assigns to the Company all right, title, and interest in all inventions, improvements, and trade secrets ("Inventions") conceived or developed during employment that relate to the Company's business.</p><p>(c) <span class="sub">Moral Rights.</span> The Employee waives any moral rights or rights of attribution or integrity in such Inventions to the fullest extent permitted by law.</p>`;
+function postTerm(){let s=`<h2>Post-Termination Obligations</h2><p>Upon termination or on request, the receiving party shall return all property and materials containing Confidential Information.`;if(S.sanitize){s+=S.type==="employee"?` The Employee shall permanently erase (digital sanitization) any copies of Confidential Information, including source-code snippets and data, held on any personal device or personal account.`:` The receiving party shall permanently delete Confidential Information from its systems and devices.`;s+=` Copies held in routine backups or retained as required by law may be kept, remain subject to this Agreement, and shall be deleted in the ordinary course.`;}return s+`</p>`;}
+const survival=()=>`<h2>Survival</h2><p>Confidentiality obligations in respect of trade secrets shall survive indefinitely, for as long as such information remains a trade secret. For all other Confidential Information, obligations shall survive for ${S.survival} year(s) following ${S.type==="employee"?"the end of employment":"expiry or termination of this Agreement"}.</p>`;
+const term=()=>S.type==="employee"?`<h2>Term</h2><p>This Agreement applies from the Effective Date and for as long as the Employee is employed by the Company, and continues to bind the Employee as set out in the Survival clause.</p>`:`<h2>Term</h2><p>This Agreement applies from the Effective Date for ${S.term} year(s), and either party may end it earlier on thirty (30) days' written notice. Disclosures made during the term remain protected as set out in the Survival clause.</p>`;
+const permitted=r=>{const a=S.type==="employee"?"to the Company's authorised personnel and advisers in the course of the Employee's duties":"to its employees, contractors, and professional advisers who need to know it for the Purpose and are bound by confidentiality duties no less protective than this Agreement";return `<h2>Permitted Disclosures</h2><p>The ${r} may disclose Confidential Information (a) ${a}; and (b) where required by law, court order, or a regulator, provided that, where lawful, it gives prompt written notice and discloses only what is legally required.${S.type==="employee"?" Nothing in this Agreement prevents the Employee from reporting a suspected violation of law to a government or regulatory authority, or from making any disclosure protected by applicable whistleblower law.":""}</p>`;};
+const nonSolicit=()=>!S.nonSolicit?"":`<h2>Non-Solicitation</h2><p>During the term and for twelve (12) months following its termination, the receiving party shall not, directly or indirectly, solicit, induce, or recruit any employee, contractor, or resource introduced by the other party, nor solicit or divert the business of any client with whom it had material contact.</p>`;
+const remedies=()=>`<h2>Remedies</h2><p>The parties acknowledge that a breach may cause irreparable harm for which monetary damages would be inadequate, entitling the non-breaching party to seek injunctive relief and specific performance in addition to any other remedy at law or in equity.</p>`;
+function general(){let g=`<h2>General Provisions</h2><p><span class="sub">Governing Law.</span> This Agreement is governed by the laws of ${F(S.jurisdiction,"Jurisdiction")}.</p><p><span class="sub">Jurisdiction.</span> ${S.arb?"Subject to the arbitration clause below, the":"The"} courts at ${F(S.courts,"City")} shall have exclusive jurisdiction over any dispute arising out of or in connection with this Agreement.</p>`;if(S.arb){const seat=F(S.arbSeat,"Seat of arbitration");g+=`<p><span class="sub">Arbitration.</span> Any dispute arising out of or in connection with this Agreement shall be finally resolved by arbitration seated in ${seat}, before ${S.arbitrators==="3"?"three (3) arbitrators":"a sole arbitrator"}, conducted in English ${S.arbRules==="Ad hoc"?"under the arbitration law applicable at that seat":"under the "+S.arbRules+" arbitration rules"}. The award shall be final and binding. Nothing in this clause prevents either party from seeking urgent interim or injunctive relief from the courts.</p>`;}return g+`<p><span class="sub">Severability.</span> If any provision is held invalid, the remainder remains in full force. <span class="sub">Entire Agreement.</span> This Agreement is the entire understanding between the parties on its subject matter and supersedes all prior agreements.</p>`;}
+function sigBlocks(){
+  const L=LABELS[S.type];
+  const col=(heading,who)=>`<div class="sigcol">
+      <div class="sig-for">For ${who}</div>
+      <div class="sig-row"><span class="sig-k">Signature</span><span class="sig-line"></span></div>
+      <div class="sig-row"><span class="sig-k">Name</span><span class="sig-line"></span></div>
+      <div class="sig-row"><span class="sig-k">Title</span><span class="sig-line"></span></div>
+      <div class="sig-row"><span class="sig-k">Date</span><span class="sig-line"></span></div>
+    </div>`;
+  return `<p><span class="sub">IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.</span></p><div class="sigwrap">${col("A",F(S.partyA,L.a))}${col("B",F(S.partyB,L.b))}</div>`;
+}
+
+function render(){updDl();updWarn();
+  const L=LABELS[S.type];
+  const r=S.type==="employee"?"Employee":(S.type==="mutual"?"receiving party":"Receiving Party");
+  const dateStr=S.edate?new Date(S.edate+"T00:00").toLocaleDateString('en-GB',{year:'numeric',month:'long',day:'numeric'}):"";
+  let intro;
+  if(S.type==="employee"){intro=`<p>This Employee Non-Disclosure Agreement is made on ${F(dateStr,"Date")} (the "Effective Date"), by and between ${F(S.partyA,"Company Name")}, a company incorporated under the laws of ${F(S.partyAcountry,"State / Country of Incorporation")}, with its principal place of business at ${F(S.partyAaddr,"Company Address")} (the "Company"), and ${F(S.partyB,"Employee Name")}, an individual residing at ${F(S.partyBaddr,"Employee Address")} (the "Employee").</p><p>In consideration of the Employee's employment or continued employment and access to Confidential Information, the parties agree as follows:</p>`;}
+  else if(S.type==="mutual"){intro=`<p>This Mutual Non-Disclosure Agreement is made on ${F(dateStr,"Effective Date")} (the "Effective Date"), by and between ${F(S.partyA,"First Party")}, a company incorporated under the laws of ${F(S.partyAcountry,"Country")}, with its principal office at ${F(S.partyAaddr,"Party A Address")}, and ${F(S.partyB,"Second Party")}, a company incorporated under the laws of ${F(S.partyBcountry,"Country")}, with its principal office at ${F(S.partyBaddr,"Party B Address")} (together, the "Parties").</p><p>The Parties wish to explore ${F(S.purpose,"the purpose")} (the "Purpose") and may each disclose Confidential Information to the other.</p>`;}
+  else{intro=`<p>This Non-Disclosure Agreement is made on ${F(dateStr,"Effective Date")} (the "Effective Date"), by and between ${F(S.partyA,"Disclosing Party")}, a company incorporated under the laws of ${F(S.partyAcountry,"Country")}, with its principal office at ${F(S.partyAaddr,"Party A Address")} (the "Disclosing Party"), and ${F(S.partyB,"Receiving Party")}, a company incorporated under the laws of ${F(S.partyBcountry,"Country")}, with its principal office at ${F(S.partyBaddr,"Party B Address")} (the "Receiving Party").</p><p>The Disclosing Party wishes to disclose Confidential Information to the Receiving Party for the purpose of ${F(S.purpose,"the purpose")} (the "Purpose").</p>`;}
+  const ip=S.type==="employee"?ipEmployee():(S.type==="mutual"?ipMutual():ipOneway());
+  $("paper").innerHTML=`<div class="title">${L.title}</div><div class="subtitle">${L.sub}</div>`+intro+defs()+obligations(r)+permitted(r)+ip+term()+postTerm()+survival()+nonSolicit()+remedies()+general()+sigBlocks()+`<div class="foot-note">Confide is a legal document tool and does not provide legal advice. This document is a starting template — please review it with a qualified lawyer in the relevant jurisdiction before signing. Generated with Confide v1.1.</div>`+`<svg class="seal${S.sealed?' show':''}" id="seal" viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="52" fill="#7E1F1A"/><circle cx="56" cy="56" r="52" fill="url(#g)" fill-opacity="0.35"/><circle cx="56" cy="56" r="43" fill="none" stroke="#5c1612" stroke-width="1.5" stroke-dasharray="3 3"/><path d="M40 57l10 10 22-24" stroke="#F3D9A8" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="56" y="92" text-anchor="middle" fill="#F3D9A8" font-family="Cormorant Garamond,serif" font-size="11" letter-spacing="1">CONFIDE</text><defs><radialGradient id="g" cx="40%" cy="35%" r="70%"><stop offset="0%" stop-color="#c0463a"/><stop offset="100%" stop-color="#7E1F1A"/></radialGradient></defs></svg>`;
+}
+
+const _r0=render;render=function(){_r0();let i=0;$("paper").querySelectorAll("h2").forEach(x=>{x.textContent=(++i)+".  "+x.textContent;});};
+/* ---------------- Word (.docx) export ----------------
+   Built from state (not scraped HTML) so the file is clean and editable.
+   Missing inputs appear as [Field] so the user can fill them in Word. */
+function v(val,ph){return val && val.trim() ? val.trim() : "["+ph+"]";}
+
+function buildDocxParagraphs(D){
+  const P=D.Paragraph,T=D.TextRun,AL=D.AlignmentType,f="Cambria",out=[];
+  const t=(text,o={})=>new T({text,font:f,size:22,...o});
+  const runs=(node,base)=>{let r=[];node.childNodes.forEach(n=>{if(n.nodeType===3){if(n.textContent)r.push(t(n.textContent,base));}else if(n.nodeType===1){r=r.concat(runs(n,n.classList.contains("sub")?{...base,bold:true}:base));}});return r;};
+  const sigLine=k=>new P({spacing:{after:140},children:[t(k+":  "),t("______________________________________",{color:"999999"})]});
+  for(const el of $("paper").children){
+    const c=el.className,g=el.tagName.toLowerCase();
+    if(c==="title")out.push(new P({alignment:AL.CENTER,spacing:{after:80},children:[t(el.textContent,{bold:true,size:30})]}));
+    else if(c==="subtitle")out.push(new P({alignment:AL.CENTER,spacing:{after:300},children:[t(el.textContent,{italics:true,color:"666666"})]}));
+    else if(g==="h2")out.push(new P({spacing:{before:220,after:90},children:[t(el.textContent,{bold:true,size:24})]}));
+    else if(g==="p")out.push(new P({alignment:AL.JUSTIFIED,spacing:{after:160,line:300},children:runs(el,{})}));
+    else if(g==="ul")el.querySelectorAll("li").forEach(li=>out.push(new P({bullet:{level:0},alignment:AL.JUSTIFIED,spacing:{after:80,line:290},children:runs(li,{})})));
+    else if(c==="sigwrap")el.querySelectorAll(".sigcol").forEach(col=>{out.push(new P({spacing:{before:60,after:120},children:[t(col.querySelector(".sig-for").textContent,{bold:true})]}));["Signature","Name","Title","Date"].forEach(k=>out.push(sigLine(k)));});
+    else if(c==="foot-note"){out.push(new P({spacing:{before:300,after:40},children:[t("DISCLAIMER",{bold:true,size:16,color:"777777"})]}));out.push(new P({children:[t(el.textContent,{italics:true,size:16,color:"888888"})]}));}
+  }
+  return out;
+}
+
+/* Resolve the docx library global, loading it on demand if the initial
+   <script> tag didn't register it (some sandboxed runtimes defer/block it). */
+const DOCX_SRCS=[
+  "https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js",
+  "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js",
+  "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"
+];
+function getDocx(){ return (typeof window!=="undefined") && (window.docx||window.Docx||null); }
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement("script");
+    s.src=src; s.async=true;
+    s.onload=()=>res(); s.onerror=()=>rej(new Error("load failed: "+src));
+    document.head.appendChild(s);
+  });
+}
+async function ensureDocx(){
+  let D=getDocx(); if(D) return D;
+  for(const src of DOCX_SRCS){
+    try{ await loadScript(src); D=getDocx(); if(D) return D; }catch(e){/* try next */}
+  }
+  return null;
+}
+
+function downloadBlob(blob,name){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+
+$("downloadBtn").addEventListener("click",async()=>{
+  const btn=$("downloadBtn"), orig=btn.textContent;
+  btn.textContent="Preparing…"; btn.disabled=true;
+  try{
+    const D=await ensureDocx();
+    if(!D) throw new Error("docx unavailable");
+    const doc=new D.Document({
+      styles:{default:{document:{run:{font:"Cambria",size:22}}}},
+      sections:[{
+        properties:{page:{margin:{top:1440,bottom:1440,left:1440,right:1440}}}, footers:{default:new D.Footer({children:[new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({children:["Confidential · Confide v1.1 · Page ",D.PageNumber.CURRENT," of ",D.PageNumber.TOTAL],font:"Cambria",size:16,color:"777777"})]})]})},
+        children:buildDocxParagraphs(D)
+      }]
+    });
+    const blob=await D.Packer.toBlob(doc);
+    downloadBlob(blob,`Confide_${S.type}_NDA.docx`);
+    btn.textContent=orig;
+  }catch(err){
+    // Graceful fallback: hand over a .doc (Word opens it) built from the preview HTML,
+    // so the user still gets an editable Word file even if the library can't load.
+    try{
+      const inner=$("paper").cloneNode(true);
+      const seal=inner.querySelector("#seal"); if(seal) seal.remove();
+      const html=
+        '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'+
+        '<head><meta charset="utf-8"><style>'+
+        '@page{margin:1in;} body{font-family:Cambria,Georgia,serif;font-size:11pt;line-height:1.6;color:#1a1a1a;}'+
+        'h2{font-size:12pt;} p{text-align:justify;} .title{text-align:center;font-size:16pt;font-weight:bold;}'+
+        '.subtitle{text-align:center;font-style:italic;color:#555;} .fillx{background:#f3ead2;}'+
+        '</style></head><body>'+inner.innerHTML+'</body></html>';
+      const blob=new Blob(['\ufeff'+html],{type:"application/msword"});
+      downloadBlob(blob,`Confide_${S.type}_NDA.doc`);
+      btn.textContent=orig;
+    }catch(e2){
+      btn.textContent="Download failed — open in a browser tab";
+      setTimeout(()=>{btn.textContent=orig;},2600);
+    }
+  }finally{updDl();
+  }
+});
+
+/* ---- v1.1: validation, draft autosave, accessibility, mobile tabs ---- */
+const FIELDS=["partyA","partyAcountry","partyAaddr","partyB","partyBcountry","partyBaddr","edate","purpose","confInfo","jurisdiction","courts","term","survival","arbSeat","arbitrators","arbRules"];
+function saveDraft(){try{const o={type:S.type,nonSolicit:S.nonSolicit,arb:S.arb,sanitize:S.sanitize};FIELDS.forEach(k=>o[k]=S[k]);localStorage.setItem("confide_draft",JSON.stringify(o));}catch(e){}}
+try{if(localStorage.getItem("confide_draft"))$("resumeBtn").style.display="";}catch(e){}
+$("resumeBtn").addEventListener("click",()=>{try{Object.assign(S,JSON.parse(localStorage.getItem("confide_draft")));FIELDS.forEach(k=>$(k).value=S[k]);[["swNS","nonSolicit"],["swAR","arb"],["swSA","sanitize"]].forEach(([i,k])=>$(i).setAttribute("aria-pressed",S[k]));$("fArbSeat").style.display=S.arb?"":"none";document.querySelector('.tcard[data-type="'+S.type+'"]').click();}catch(e){}});
+$("edate").value=S.edate;
+function missing(){const m=[],c=(k,n)=>{if(!(S[k]||"").trim())m.push(n);},em=S.type==="employee";c("partyA","Party A name");c("partyAcountry","Party A country");c("partyAaddr","Party A address");c("partyB","Party B name");if(!em)c("partyBcountry","Party B country");c("partyBaddr","Party B address");c("edate","Effective date");if(!em)c("purpose","Purpose");c("jurisdiction","Governing law");c("courts","Courts city");if(S.arb)c("arbSeat","Seat of arbitration");return m;}
+function finalise(){const m=missing(),b=$("finMsg");if(m.length){b.textContent="Please complete: "+m.join(", ")+".";b.classList.add("on");return;}b.classList.remove("on");S.sealed=true;render();if(innerWidth<=860)document.querySelector('.mtab button[data-m="prev"]').click();}
+function updDl(){const b=$("downloadBtn");b.disabled=!S.sealed;b.title=S.sealed?"":"Tap Finalise & Seal to unlock the download";}
+function updWarn(){const w=[],ind=/india/i;if(S.type==="employee"){if(S.nonSolicit&&ind.test(S.jurisdiction))w.push("Post-employment non-solicitation is often unenforceable in India (Section 27, Indian Contract Act). Consider reviewing this clause with a lawyer.");w.push("The work-made-for-hire and moral-rights wording follows US concepts. Check it suits your governing law.");}if(S.arb&&S.arbSeat&&ind.test(S.partyAcountry)&&ind.test(S.partyBcountry)&&!/india|delhi|mumbai|bengaluru|bangalore|chennai|hyderabad|pune|kolkata|gurugram|gurgaon|noida|ahmedabad/i.test(S.arbSeat))w.push("Both parties look Indian but the seat is outside India. Check this is intended, as it can complicate enforcement.");const b=$("warnBox");b.innerHTML=w.map(t=>"<div>"+t+"</div>").join("");b.classList.toggle("on",w.length>0);}
+document.querySelectorAll("label").forEach(l=>{const i=l.parentElement.querySelector("input,textarea,select");if(i&&i.id&&!l.htmlFor)l.htmlFor=i.id;});
+document.querySelectorAll(".sw").forEach(s=>{s.tabIndex=0;s.setAttribute("aria-label",s.parentElement.querySelector(".lab").firstChild.textContent);const sync=()=>s.setAttribute("aria-checked",s.getAttribute("aria-pressed"));sync();new MutationObserver(sync).observe(s,{attributes:true,attributeFilter:["aria-pressed"]});s.addEventListener("keydown",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();s.click();}});});
+document.querySelectorAll(".chip").forEach(c=>{c.tabIndex=0;c.setAttribute("role","button");c.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();c.click();}});});
+$("landing").addEventListener("click",()=>$("landing").classList.add("skip"));
+$("builder").classList.add("m-edit");
+document.querySelectorAll(".mtab button").forEach(b=>b.addEventListener("click",()=>{$("builder").classList.toggle("m-edit",b.dataset.m==="edit");$("builder").classList.toggle("m-prev",b.dataset.m==="prev");document.querySelectorAll(".mtab button").forEach(x=>x.classList.toggle("on",x===b));window.scrollTo(0,0);}));
+
+if(/LinkedInApp|FBAN|FBAV|Instagram/i.test(navigator.userAgent))$("downloadBtn").parentElement.insertAdjacentHTML("afterend",'<div class="warn on" style="margin:-8px 0 16px">Downloads can be blocked inside in-app browsers. If the file does not download, open this page in Chrome or Safari from the \u22EF menu.</div>');
+
+render();
+</script>
+</body>
+</html>
