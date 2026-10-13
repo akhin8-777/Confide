@@ -9,7 +9,7 @@ A free NDA generator for B2B and IT consulting agreements. Choose a one-way, mut
 - Live document preview
 - Optional arbitration clause (seat, arbitrators, rules)
 - Editable .docx download
-- Works on mobile, tablet and desktop
+- Works on mobile, tablet, and desktop
 - Runs entirely in your browser; nothing is sent to a server
 
 ## Disclaimer
